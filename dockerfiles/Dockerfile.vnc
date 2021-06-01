@@ -1,0 +1,70 @@
+ARG from
+FROM ${from}
+
+LABEL maintainer="Kirill Artemov <kaartemov@gmail.com>"
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt update
+
+# Install essentials
+RUN apt install -y apt-utils software-properties-common apt-transport-https sudo \
+    psmisc lsb-release tmux nano wget curl telnet gnupg build-essential gdb git gitk \
+    cmake cmake-curses-gui libedit-dev libxml2-dev autoconf locales gdebi terminator meld \
+    dos2unix bash-completion meshlab
+
+# Set the locale
+RUN locale-gen en_US.UTF-8
+
+# Install graphics
+RUN apt install -y xfce4 xfce4-goodies xserver-xorg-video-dummy xserver-xorg-legacy x11vnc firefox && \
+    sed -i 's/allowed_users=console/allowed_users=anybody/' /etc/X11/Xwrapper.config
+COPY xorg.conf /etc/X11/xorg.conf
+RUN dos2unix /etc/X11/xorg.conf
+
+# Install noVNC
+RUN git clone https://github.com/novnc/noVNC.git /opt/novnc && \
+    git clone https://github.com/novnc/websockify /opt/novnc/utils/websockify && \
+    echo "<html><head><meta http-equiv=\"Refresh\" content=\"0; url=vnc.html?autoconnect=true&reconnect=true&reconnect_delay=1000&resize=scale&quality=9\"></head></html>" > /opt/novnc/index.html
+
+# INSTALL DEPENDENCIES
+# ...
+
+
+# INSTALLATION AND BUILDING PART
+# ...
+
+
+# Set environmental variables
+ENV DISPLAY=:1
+
+# Create user
+RUN useradd -l -u 33333 -G sudo -md /home/human -s /bin/bash -p human human && \
+    # passwordless sudo for users in the 'sudo' group
+    sed -i.bkp -e 's/%sudo\s\+ALL=(ALL\(:ALL\)\?)\s\+ALL/%sudo ALL=NOPASSWD:ALL/g' /etc/sudoers
+
+# Switch to new user
+USER human
+
+# Set up .bashrc
+WORKDIR /home/human
+
+# Create the Desktop dir
+RUN mkdir -p /home/human/Desktop
+
+# Switch back to root
+USER root
+
+# SET UP SCRIPTS
+COPY start-vnc-session.sh /usr/bin/start-vnc-session.sh
+RUN chmod +x /usr/bin/start-vnc-session.sh
+
+# PORTS FORWARDING
+EXPOSE 5901
+EXPOSE 6080
+
+# Clean up apt-lists
+RUN rm -Rf /var/lib/apt/lists/*
+
+WORKDIR /
+CMD ["bash"]
