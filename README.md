@@ -12,6 +12,8 @@ Repository includes some _Dockerfile_ templates for robotics applications. It wo
     - basics dependenties
     - web vnc based on [noVNC](https://github.com/novnc/noVNC)
 
+_Pretty good exapmle from [github.com/robotology](https://github.com/robotology/icub-gazebo-grasping-sandbox/tree/master/dockerfiles)_
+
 ## Example or how to use
 
 ```
